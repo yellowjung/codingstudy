@@ -44,7 +44,7 @@ void Label(int x, int y, int L){
 
         if(Team[L].size() == 1 && MAP[nx][ny] != 2) continue;
 
-        if(MAP[nx][ny] == 3) Person[L] == Team[L].size() + 1;
+        if(MAP[nx][ny] == 3) Person[L] = Team[L].size() + 1;
 
         Visit[nx][ny] = 1;
         Team[L].push_back({nx, ny});

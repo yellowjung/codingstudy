@@ -1,9 +1,10 @@
 #include <iostream>
-#include <vector>
 #include <queue>
-using namespace std;
+#include <vector>
+#include <algorithm>
 
 #define MAX 25
+using namespace std;
 
 int r, c, k, w;
 int map[MAX][MAX];
@@ -13,32 +14,21 @@ vector<pair<int,int>> searchPos;
 vector<pair<pair<int,int>, int>> heater;
 vector<pair<pair<int,int>, int>> wall;
 
-int dx[] = {0, 1, 0, -1};
-int dy[] = {1, 0, -1 ,0};
+int dx[] = {0, 0, 1, -1};
+int dy[] = {1, -1, 0, 0};
 
-int wdx[4][3] = {{-1, 0, 1}, {-1, 0, 1}, {1, 1, 1}, {-1, -1, -1}};
-int wdy[4][3] = {{1, 1, 1}, {-1, -1, -1}, {-1, 0, 1}, {-1, 0, 1}};
-
-void printMap(){
-    cout<<"################\n";
-    for(int i = 1; i <= r; i++){
-        for(int j = 1; j <= c; j++){
-            cout<<map[i][j]<<" ";
-        }
-        cout<<"\n";
-    }
-    cout<<"################\n";
-}
+int wdx[4][3] = {{-1, 0, 1},{-1, 0, 1},{1, 1, 1},{-1, -1, -1}};
+int wdy[4][3] = {{1, 1, 1},{-1, -1, -1},{-1, 0, 1}, {-1, 0, 1}};
 
 void input(){
     cin >> r >> c >> k;
-    for(int  i = 1; i <= r; i++){
+    for(int i = 1; i <= r; i++){
         for(int j = 1; j <= c; j++){
             cin >> map[i][j];
             if(map[i][j] != 0 && map[i][j] != 5){
                 heater.push_back({{i, j}, map[i][j]});
             }else if(map[i][j] == 5){
-                searchPos.push_back({i,j});
+                searchPos.push_back({i ,j});
             }
             map[i][j] = 0;
         }
@@ -46,9 +36,10 @@ void input(){
     cin >> w;
     for(int i = 0; i < w; i++){
         int a, b, c;
-        cin>> a>> b>> c;
-        wall.push_back({{a,b},c});
+        cin >> a >> b >> c;
+        wall.push_back({{a, b}, c});
     }
+
 }
 
 void settingWall(){
@@ -57,7 +48,7 @@ void settingWall(){
         int y = wall[i].first.second;
         int t = wall[i].second;
 
-        if (t == 0){
+        if(t == 0){
             wallMap[x][y][3] = true;
             wallMap[x - 1][y][2] = true;
         }else{
@@ -68,29 +59,20 @@ void settingWall(){
 }
 
 int changeMydir(int d){
-    switch(d){
-        case 1:
-            return 0;
-        case 2:
-            return 1;
-        case 3:
-            return 3;
-        case 4:
-            return 2;
+    switch (d)
+    {
+    case 1:
+        return 0;
+    case 2:
+        return 1;
+    case 3:
+        return 3;
+    case 4:
+        return 2;    
     }
-
 }
 
-bool check(){
-    for (int i = 0; i <searchPos.size(); i++){
-        int x = searchPos[i].first;
-        int y = searchPos[i].second;
-        if(map[x][y] < k) return false;
-    }
-    return true;
-}
-
-bool checkWall(int x , int y, int nx, int ny, int d, int dir){
+bool checkWall(int x, int y, int nx, int ny, int d, int dir){
     if(dir == 1){
         if(wallMap[x][y][d] == false) return true;
     }else if(dir == 0){
@@ -99,17 +81,17 @@ bool checkWall(int x , int y, int nx, int ny, int d, int dir){
             int upy = y;
             if(wallMap[x][y][3] == false && wallMap[upx][upy][0] == false) return true;
         }else if(d == 1){
-            int upx = x - 1;
+            int upx = x- 1;
             int upy = y;
             if(wallMap[x][y][3] == false && wallMap[upx][upy][1] == false) return true;
         }else if(d == 2){
-            int upx = x;
-            int upy = y - 1;
-            if(wallMap[x][y][1] == false && wallMap[upx][upy][2] == false) return true;
+            int dnx = x;
+            int dny = y - 1;
+            if(wallMap[x][y][1] == false && wallMap[dnx][dny][2] == false) return true;
         }else if(d == 3){
-            int upx = x;
-            int upy = y - 1;
-            if(wallMap[x][y][1] == false && wallMap[upx][upy][3] == false) return true;
+            int dnx = x;
+            int dny = y - 1;
+            if(wallMap[x][y][1] == false && wallMap[dnx][dny][3] == false) return true;
         }
     }else if(dir == 2){
         if(d == 0){
@@ -121,16 +103,23 @@ bool checkWall(int x , int y, int nx, int ny, int d, int dir){
             int upy = y;
             if(wallMap[x][y][2] == false && wallMap[upx][upy][1] == false) return true;
         }else if(d == 2){
-            int upx = x;
-            int upy = y + 1;
-            if(wallMap[x][y][0] == false && wallMap[upx][upy][2] == false) return true;
+            int dnx = x;
+            int dny = y + 1;
+            if(wallMap[x][y][0] == false && wallMap[dnx][dny][2] == false) return true;
         }else if(d == 3){
-            int upx = x;
-            int upy = y + 1;
-            if(wallMap[x][y][0] == false && wallMap[upx][upy][3] == false) return true;
+            int dnx = x;
+            int dny = y + 1;
+            if(wallMap[x][y][0] == false && wallMap[dnx][dny][3] == false) return true;
         }
     }
-    return false;
+}
+
+void addMap(int A[][MAX], int B[][MAX]){
+    for(int i = 1; i <= r; i++){
+        for(int j = 1; j <= c; j++){
+            A[i][j] += B[i][j];
+        }
+    }
 }
 
 void spread(int x, int y, int d){
@@ -140,38 +129,29 @@ void spread(int x, int y, int d){
     y += dy[d];
     if(x < 1 || y < 1 || x > r || y > c) return;
 
-    queue<pair<pair<int,int>, int>> q;
-    q.push({{x,y}, 5});
+    queue<pair<pair<int, int>, int>> q;
+    q.push({{x, y}, 5});
 
-    while(!q.empty()){
+    while(q.empty() == 0){
         int x = q.front().first.first;
         int y = q.front().first.second;
         int wind = q.front().second;
         q.pop();
 
         map[x][y] += wind;
-        if (wind == 1) continue;
+        if(wind == 1) break;
 
         for(int i = 0; i < 3; i++){
             int nx = x + wdx[d][i];
             int ny = y + wdy[d][i];
-            if(nx >= 1 && ny >= 1 && nx <= r && ny <= c){
-                if (update[nx][ny] == false && checkWall(x, y, nx ,ny, d, i) == true){
+            if (nx >= 1 && ny >= 1 && nx <= r && ny <= c){
+                if(update[nx][ny] == false && checkWall(x, y, nx, ny, d, i) == true){
                     update[nx][ny] = true;
-                    q.push({{nx,ny}, wind - 1});
+                    q.push({{nx, ny}, wind - 1});
                 }
             }
         }
-    }
-
-}
-
-void addMap(int A[][MAX], int B[][MAX]){
-    for(int i = 1; i <= r; i++){
-        for(int j = 1; j <= c; j++){
-            A[i][j] += B[i][j];
-        }
-    }
+    }   
 }
 
 void spreadWind(){
@@ -191,31 +171,31 @@ void controlTemperature(){
                 int dir = i == 0 ? 0 : 2;
                 int nx = x + dx[dir];
                 int ny = y + dy[dir];
-                if(nx >= 1 && ny >= 1 && nx <= r && ny <= c){
+                if (nx >= 1 && ny >= 1 && nx <= r && ny <= c){
                     if(wallMap[x][y][dir] == false){
                         pair<int, int> maxCoord, minCoord;
                         if(map[x][y] > map[nx][ny]){
-                            maxCoord = {x , y};
+                            maxCoord = {x, y};
                             minCoord = {nx, ny};
                         }else{
                             maxCoord = {nx, ny};
-                            minCoord = {x ,y};
+                            minCoord = {x, y};
                         }
 
                         int diff = abs(map[x][y] - map[nx][ny]);
                         diff /= 4;
                         tempMap[maxCoord.first][maxCoord.second] -= diff;
-                        tempMap[maxCoord.first][maxCoord.second] += diff;
+                        tempMap[minCoord.first][minCoord.second] += diff;
                     }
                 }
             }
         }
     }
-    addMap(map, tempMap);
+    addMap(map,tempMap);
 }
 
 void decreaseTemperature(){
-    for(int i = 1; i <=c; i++){
+    for(int i = 1; i <= c; i++){
         if(map[1][i] > 0) map[1][i]--;
         if(map[r][i] > 0) map[r][i]--;
     }
@@ -225,6 +205,16 @@ void decreaseTemperature(){
     }
 }
 
+bool check(){
+    for(int i = 0; i < searchPos.size(); i++){
+        int x = searchPos[i].first;
+        int y = searchPos[i].second;
+        if(map[x][y] < k ) return false;
+    }
+
+    return true;
+}
+
 void solution(){
     settingWall();
     int chocolate = 0;
@@ -232,6 +222,7 @@ void solution(){
         if(chocolate > 100){
             break;
         }
+
         spreadWind();
         controlTemperature();
         decreaseTemperature();
@@ -241,16 +232,16 @@ void solution(){
             break;
         }
     }
-    cout << chocolate <<"\n";
+
+    cout << chocolate << "\n";
 }
 
 void solve(){
     input();
     solution();
-    printMap();
 }
 
-int main() {
+int main(){
     ios::sync_with_stdio(0);
     cin.tie(0);
     cout.tie(0);

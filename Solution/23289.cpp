@@ -124,7 +124,7 @@ void addMap(int A[][MAX], int B[][MAX]){
 
 void spread(int x, int y, int d){
     bool update[MAX][MAX] = {false, };
-    d = changeMydir(d);
+    //d = changeMydir(d);
     x += dx[d];
     y += dy[d];
     if(x < 1 || y < 1 || x > r || y > c) return;

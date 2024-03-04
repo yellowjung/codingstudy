@@ -82,11 +82,146 @@ ull getHash(unsigned int MAP[10][10]){
     return hash;
 }
 
+int dr[] = {0, -1, 0, 1};
+int dc[] = {-1, 0, 1, 0};
+
+int isMoveRight(CAR car, unsigned MAP[][10]){
+    if(MAP[car.r + dr[RIGHT]][car.c + car.length - 1 + dc[RIGHT]] != 0) return 0;
+
+    int length = car.length;
+
+    for(int i = length - 1; i >= 0; i--){
+        int nr, nc;
+
+        nr = car.r + dr[RIGHT];
+        nc = car.c + i + dc[RIGHT];
+
+        MAP[car.r][car.c + i] = 0;
+        MAP[nr][nc] = 1;
+   }
+
+    return 1;
+}
+
+int isMoveLeft(CAR car, unsigned MAP[][10])
+{
+	if (MAP[car.r + dr[LEFT]][car.c + dc[LEFT]] != 0) return 0;
+
+	int length = car.length;
+
+	for (int i = 0; i < length; i++)
+	{
+		int nr, nc;
+
+		nr = car.r + dr[LEFT];
+		nc = car.c + i + dc[LEFT];
+
+		MAP[car.r][car.c + i] = 0;
+		MAP[nr][nc] = 1;
+	}
+
+	return 1;
+}
+
+int isMoveUp(CAR car, unsigned MAP[][10])
+{
+	if (MAP[car.r + dr[UP]][car.c + dc[UP]] != 0) return 0;
+
+	int length = car.length;
+
+	for (int i = 0; i < length; i++)
+	{
+		int nr, nc;
+
+		nr = car.r + i + dr[UP];
+		nc = car.c + dc[UP];
+
+		MAP[car.r + i][car.c] = 0;
+		MAP[nr][nc] = 1;
+	}
+
+	return 1;
+}
+
+int isMoveDown(CAR car, unsigned MAP[][10])
+{
+	if (MAP[car.r + car.length - 1 + dr[DOWN]][car.c + dc[DOWN]] != 0) return 0;
+
+	int length = car.length;
+
+	for (int i = length - 1; i >= 0; i--)
+	{
+		int nr, nc;
+
+		nr = car.r + i + dr[DOWN];
+		nc = car.c + dc[DOWN];
+
+		MAP[car.r + i][car.c] = 0;
+		MAP[nr][nc] = 1;
+	}
+
+	return 1;
+}
+
 int MIN = 0x7fff0000;
 void DFS(int L){
     if(MIN <= L) return;
 
     ull h = getHash(MAP);
+    int p = h % PRIME;
+
+    if(hashMap[p] > L){
+        hashMap[p] = L;
+    }else{
+        return;
+    }
+
+    if(car[1].c == 5){
+        if(L < MIN) MIN = L;
+        return;
+    }
+
+    if(L > 7) return;
+
+    for(int i = 1; i <= ccnt; i++){
+        if(car[i].dir == LEFT){
+            if (isMoveRight(car[i], MAP))
+			{
+				car[i].c++;
+				DFS(L + 1);
+
+				isMoveLeft(car[i], MAP);
+				car[i].c--;
+			}
+
+			if (isMoveLeft(car[i], MAP))
+			{
+				car[i].c--;
+				DFS(L + 1);
+
+				isMoveRight(car[i], MAP);
+				car[i].c++;
+			}
+        }else{
+			if (isMoveUp(car[i], MAP))
+			{
+				car[i].r--;
+				DFS(L + 1);
+
+				isMoveDown(car[i], MAP);
+				car[i].r++;
+			}
+
+			if (isMoveDown(car[i], MAP))
+			{
+				car[i].r++;
+				DFS(L + 1);
+
+				isMoveUp(car[i], MAP);
+				car[i].r--;
+			}
+        }
+    }
 }
 
 

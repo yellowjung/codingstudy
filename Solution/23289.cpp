@@ -1,252 +1,279 @@
 #include <iostream>
-#include <queue>
-#include <vector>
-#include <algorithm>
 
-#define MAX 25
 using namespace std;
 
-int r, c, k, w;
-int map[MAX][MAX];
-bool wallMap[MAX][MAX][4];
+#define MAX (20 + 10)
+#define RIGHT (1)
+#define LEFT (2)
+#define UP (3)
+#define DOWN (4)
 
-vector<pair<int,int>> searchPos;
-vector<pair<pair<int,int>, int>> heater;
-vector<pair<pair<int,int>, int>> wall;
+int dr[] = {0, 0, 0, -1 ,1};
+int dc[] = {0, -1, -1, 0, 0};
 
-int dx[] = {0, 0, 1, -1};
-int dy[] = {1, -1, 0, 0};
+int R, C, K, W;
+int A[MAX][MAX];
+int MAP[MAX][MAX];
 
-int wdx[4][3] = {{-1, 0, 1},{-1, 0, 1},{1, 1, 1},{-1, -1, -1}};
-int wdy[4][3] = {{1, 1, 1},{-1, -1, -1},{-1, 0, 1}, {-1, 0, 1}};
+typedef struct st1{
+    int r;
+    int c;
+}RC;
+
+RC checkPoint[MAX * MAX];
+int ccnt;
+
+typedef struct st2{
+    int r;
+    int c;
+    int dir;
+}HEATER;
+
+HEATER heater[MAX * MAX];
+int hcnt;
+
+typedef struct st3{
+    int r;
+    int c;
+    int temp;
+}QUEUE;
+
+typedef struct st4{
+    int direction[5];
+}WALL;
+
+WALL wall[MAX][MAX];
 
 void input(){
-    cin >> r >> c >> k;
-    for(int i = 1; i <= r; i++){
-        for(int j = 1; j <= c; j++){
-            cin >> map[i][j];
-            if(map[i][j] != 0 && map[i][j] != 5){
-                heater.push_back({{i, j}, map[i][j]});
-            }else if(map[i][j] == 5){
-                searchPos.push_back({i ,j});
+    cin >> R >> C >> K;
+
+    for(int r = 1; r <= R; r++){
+        for(int c = 1; c <= C; c++){
+            cin >> A[r][c];
+
+            if(A[r][c] == 5){
+                checkPoint[ccnt].r = r;
+                checkPoint[ccnt++].c = c;
+            }else if(A[r][c] != 0){
+                heater[hcnt].r = r;
+                heater[hcnt].c = c;
+                heater[hcnt++].dir = A[r][c];
             }
-            map[i][j] = 0;
         }
     }
-    cin >> w;
-    for(int i = 0; i < w; i++){
-        int a, b, c;
-        cin >> a >> b >> c;
-        wall.push_back({{a, b}, c});
-    }
 
-}
+    cin >> W;
 
-void settingWall(){
-    for(int i = 0; i < w; i++){
-        int x = wall[i].first.first;
-        int y = wall[i].first.second;
-        int t = wall[i].second;
+    for(int i = 0; i < W; i++){
+        int r, c, t;
 
-        if(t == 0){
-            wallMap[x][y][3] = true;
-            wallMap[x - 1][y][2] = true;
+        cin >> r >> c >> t;
+
+        if(t == 1){
+            wall[r][c].direction[RIGHT] = 1;
+            wall[r][c + 1].direction[LEFT] = 1;
         }else{
-            wallMap[x][y][0] = true;
-            wallMap[x][y + 1][1] = true;
+            wall[r][c].direction[UP] = 1;
+            wall[r - 1][c].direction[DOWN] = 1;
         }
     }
 }
 
-int changeMydir(int d){
-    switch (d)
-    {
-    case 1:
-        return 0;
-    case 2:
-        return 1;
-    case 3:
-        return 3;
-    case 4:
-        return 2;    
+void output(int map[MAX][MAX]){
+    for(int r = 1; r <= R; r++){
+        for(int c = 1; c <= C; c++){
+            cout<<map[r][c]<<" ";
+        }
+        cout<<"\n";
     }
+    cout<<"\n";
 }
 
-bool checkWall(int x, int y, int nx, int ny, int d, int dir){
-    if(dir == 1){
-        if(wallMap[x][y][d] == false) return true;
-    }else if(dir == 0){
-        if(d == 0){
-            int upx = x - 1;
-            int upy = y;
-            if(wallMap[x][y][3] == false && wallMap[upx][upy][0] == false) return true;
-        }else if(d == 1){
-            int upx = x- 1;
-            int upy = y;
-            if(wallMap[x][y][3] == false && wallMap[upx][upy][1] == false) return true;
-        }else if(d == 2){
-            int dnx = x;
-            int dny = y - 1;
-            if(wallMap[x][y][1] == false && wallMap[dnx][dny][2] == false) return true;
-        }else if(d == 3){
-            int dnx = x;
-            int dny = y - 1;
-            if(wallMap[x][y][1] == false && wallMap[dnx][dny][3] == false) return true;
-        }
-    }else if(dir == 2){
-        if(d == 0){
-            int upx = x + 1;
-            int upy = y;
-            if(wallMap[x][y][2] == false && wallMap[upx][upy][0] == false) return true;
-        }else if(d == 1){
-            int upx = x + 1;
-            int upy = y;
-            if(wallMap[x][y][2] == false && wallMap[upx][upy][1] == false) return true;
-        }else if(d == 2){
-            int dnx = x;
-            int dny = y + 1;
-            if(wallMap[x][y][0] == false && wallMap[dnx][dny][2] == false) return true;
-        }else if(d == 3){
-            int dnx = x;
-            int dny = y + 1;
-            if(wallMap[x][y][0] == false && wallMap[dnx][dny][3] == false) return true;
-        }
-    }
-}
+void heat(int r, int c, int dir){
+    QUEUE queue[MAX * MAX];
 
-void addMap(int A[][MAX], int B[][MAX]){
-    for(int i = 1; i <= r; i++){
-        for(int j = 1; j <= c; j++){
-            A[i][j] += B[i][j];
-        }
-    }
-}
+    int visit[MAX][MAX] = {0};
+    int wp, rp;
+    int sr, sc, temp;
 
-void spread(int x, int y, int d){
-    bool update[MAX][MAX] = {false, };
-    //d = changeMydir(d);
-    x += dx[d];
-    y += dy[d];
-    if(x < 1 || y < 1 || x > r || y > c) return;
+    temp = 5;
+    sr = r, sc = c;
 
-    queue<pair<pair<int, int>, int>> q;
-    q.push({{x, y}, 5});
+    wp = rp = 0;
 
-    while(q.empty() == 0){
-        int x = q.front().first.first;
-        int y = q.front().first.second;
-        int wind = q.front().second;
-        q.pop();
+    queue[wp].r = r;
+    queue[wp].c = c;
+    queue[wp++].temp = 5;
 
-        map[x][y] += wind;
-        if(wind == 1) break;
+    visit[r][c] = 1;
 
-        for(int i = 0; i < 3; i++){
-            int nx = x + wdx[d][i];
-            int ny = y + wdy[d][i];
-            if (nx >= 1 && ny >= 1 && nx <= r && ny <= c){
-                if(update[nx][ny] == false && checkWall(x, y, nx, ny, d, i) == true){
-                    update[nx][ny] = true;
-                    q.push({{nx, ny}, wind - 1});
-                }
+    while(wp > rp){
+        QUEUE out = queue[rp++];
+
+        if(out.temp == 0) break;
+
+        if(out.r <= 0 || out.c <= 0 || out.r > R || out.c > C) continue;
+
+        MAP[out.r][out.c] += out.temp;
+
+        if(dir == RIGHT || dir == LEFT){
+            int nr, nc;
+
+            nc = out.c + dc[dir];
+
+            nr = out.r - 1;
+            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[UP] == 0) && (wall[nr][out.c].direction[dir] == 0)){
+                queue[wp].r = nr;
+                queue[wp].c = nc;
+                queue[wp++].temp = out.temp - 1;
+
+                visit[nr][nc] = 1;
+            }
+
+            nr = out.r;
+            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[dir] == 0)){
+                queue[wp].r = nr;
+                queue[wp].c = nc;
+                queue[wp++].temp = out.temp - 1;
+
+                visit[nr][nc] = 1;
+            }
+
+            nr = out.r + 1;
+            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[DOWN] == 0) && (wall[nr][out.c].direction[dir] == 0)){
+                queue[wp].r = nr;
+                queue[wp].c = nc;
+                queue[wp++].temp = out.temp - 1;
+
+                visit[nr][nc] = 1;
+            }
+        }else{
+            int nr, nc;
+
+            nr = out.r + dr[dir];
+
+            nc = out.c - 1;
+            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[LEFT] == 0) && (wall[out.r][nc].direction[dir] == 0)){
+                queue[wp].r = nr;
+                queue[wp].c == nc;
+                queue[wp++].temp = out.temp - 1;
+
+                visit[nr][nc] = 1;
+            }
+
+
+            nc = out.c;
+            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[dir] == 0)){
+                queue[wp].r = nr;
+                queue[wp].c = nc;
+                queue[wp].temp = out.temp - 1;
+
+                visit[nr][nc] = 1;
+            }
+
+            nc = out.c + 1;
+            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[RIGHT] == 0) && (wall[out.r][nc].direction[dir] == 0)){
+                queue[wp].r = nr;
+                queue[wp].c = nc;
+                queue[wp++].temp = out.temp - 1;
+
+                visit[nr][nc] = 1;
+
             }
         }
-    }   
-}
 
-void spreadWind(){
-    for(int i = 0; i < heater.size(); i++){
-        int x = heater[i].first.first;
-        int y = heater[i].first.second;
-        int d = heater[i].second;
-        spread(x, y, d);
+
+
     }
 }
 
 void controlTemperature(){
-    int tempMap[MAX][MAX] = {0, };
-    for(int x = 1; x <= r; x++){
-        for(int y = 1; y <= c; y++){
-            for(int i = 0; i < 2; i++){
-                int dir = i == 0 ? 0 : 2;
-                int nx = x + dx[dir];
-                int ny = y + dy[dir];
-                if (nx >= 1 && ny >= 1 && nx <= r && ny <= c){
-                    if(wallMap[x][y][dir] == false){
-                        pair<int, int> maxCoord, minCoord;
-                        if(map[x][y] > map[nx][ny]){
-                            maxCoord = {x, y};
-                            minCoord = {nx, ny};
-                        }else{
-                            maxCoord = {nx, ny};
-                            minCoord = {x, y};
-                        }
+    int tmpMAP[MAX][MAX] = { 0 };
 
-                        int diff = abs(map[x][y] - map[nx][ny]);
-                        diff /= 4;
-                        tempMap[maxCoord.first][maxCoord.second] -= diff;
-                        tempMap[minCoord.first][minCoord.second] += diff;
+    for(int r = 1; r <= R; r++){
+        for(int c = 1; c <= C; c++){
+            if(MAP[r][c] > 0){
+                int save = MAP[r][c];
+
+                for(int dir = 1; dir <= 4; dir++){
+                    int nr, nc;
+
+                    nr = r + dr[dir];
+                    nc = c + dc[dir];
+
+                    if(nr <= 0 || nc <= 0 || nr > R || nc > C) continue;
+                    if(wall[r][c].direction[dir] == 1) continue;
+                    if(MAP[r][c] > MAP[nr][nc]){
+                        int diff = (MAP[r][c] - MAP[nr][nc]) / 4;
+                        save -= diff;
+                        tmpMAP[nr][nc] += diff;
                     }
                 }
+
+                tmpMAP[r][c] += save;
             }
         }
     }
-    addMap(map,tempMap);
+
+    for(int r= 1; r <= R; r++){
+        for(int c = 1; c <= C; c++){
+            MAP[r][c] = tmpMAP[r][c];
+        }
+    }
 }
 
 void decreaseTemperature(){
-    for(int i = 1; i <= c; i++){
-        if(map[1][i] > 0) map[1][i]--;
-        if(map[r][i] > 0) map[r][i]--;
-    }
-    for(int i = 2; i < r; i++){
-        if(map[i][1] > 0) map[i][1]--;
-        if(map[i][c] > 0) map[i][c]--;
-    }
+	if (MAP[1][1]) MAP[1][1]--;
+	if (MAP[R][1]) MAP[R][1]--;
+	if (MAP[1][C]) MAP[1][C]--;
+	if (MAP[R][C]) MAP[R][C]--;
+
+	for (int r = 2; r <= R - 1; r++)
+		if (MAP[r][1]) MAP[r][1]--;
+
+	for (int r = 2; r <= R - 1; r++)
+		if (MAP[r][C]) MAP[r][C]--;
+
+	for (int c = 2; c <= C - 1; c++)
+		if (MAP[1][c]) MAP[1][c]--;
+
+	for (int c = 2; c <= C - 1; c++)
+		if (MAP[R][c]) MAP[R][c]--;
 }
 
-bool check(){
-    for(int i = 0; i < searchPos.size(); i++){
-        int x = searchPos[i].first;
-        int y = searchPos[i].second;
-        if(map[x][y] < k ) return false;
+int testCheckPoint(){
+    for(int i = 0; i < ccnt; i++){
+        if(MAP[checkPoint[i].r][checkPoint[i].c] < K) return 0;
     }
-
-    return true;
-}
-
-void solution(){
-    settingWall();
-    int chocolate = 0;
-    while(1){
-        if(chocolate > 100){
-            break;
-        }
-
-        spreadWind();
-        controlTemperature();
-        decreaseTemperature();
-        chocolate++;
-
-        if(check() == true){
-            break;
-        }
-    }
-
-    cout << chocolate << "\n";
-}
-
-void solve(){
-    input();
-    solution();
+    return 1;
 }
 
 int main(){
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    cout.tie(0);
 
-    solve();
+    input();
+    
+    int chocolate = 0;
+
+    while(1){
+        for(int i = 0; i < hcnt; i++){
+            int r, c, dir;
+
+            r = heater[i].r;
+            c = heater[i].c;
+            dir = heater[i].dir;
+
+            heat(r + dr[dir], c + dc[dir], dir);
+        }
+
+        controlTemperature();
+
+        chocolate++;
+
+        if(testCheckPoint()) break;
+        if(chocolate > 100)break;
+    }
+
+    cout<<chocolate<<"\n";
 
     return 0;
 }

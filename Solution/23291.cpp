@@ -1,191 +1,165 @@
 #include <iostream>
-#include <queue>
-#include <vector>
 
-#define MAX 110
 using namespace std;
 
-int n, k;
-deque<int> bowl[MAX];
+#define MAX (100 + 10)
 
-int dx[] = {0, -1};
-int dy[] = {1, 0};
+int N, K;
+int FISH[MAX][MAX];
 
 void input(){
-    cin >> n >> k;
-    for(int i = 0; i< n; i++){
-        int a; cin >> a;
-        bowl[0].push_back(a);
-    }
-}
+    cin >> N >> K;
 
-bool check(){
-    int minFish = 987654321;
-    int maxFish = -987654321;
-    for(int i = 0; i < bowl[0].size(); i++){
-        minFish = min(minFish, bowl[0][i]);
-        maxFish = max(maxFish, bowl[0][i]);
-    }
+    for(int i = 1; i <= N; i++){
+        int f;
 
-    return maxFish - minFish <= k ? true : false;
+        cin >> f;
+        FISH[N][i] = f;
+    }
 }
 
 void addFish(){
-    int minFish = 987654321;
-    vector<int> idxV;
-    for(int i = 0; i < bowl[0].size(); i++){
-        if(bowl[0][i] < minFish){
-            minFish = bowl[0][i];
-            idxV.clear();
-            idxV.push_back(i);
-        }else if(bowl[0][i] == minFish){
-            idxV.push_back(i);
+    int min = 0x7fff0000;
+    for(int r = 1; r <= N; r++){
+        for(int c = 1; c <= N; c++){
+            if(FISH[r][c] == 0) continue;
+            if(FISH[r][c] < min) min = FISH[r][c];
         }
     }
 
-    for(auto idx : idxV){
-        bowl[0][idx]++;
+    for(int r = 1; r <= N; r++){
+        for(int c = 1; c <= N; c++){
+            if(FISH[r][c] == min) FISH[r][c]++;
+        }
     }
 }
 
-bool canBuild(int w, int h){
-    if(bowl[0].size() - w < h){
-        return false;
-    }
-    return true;
-}
+void move(){
+    int start, width, height;
 
-int buildBowl(){
-    int width = 1;
-    int height = 1;
-    bool flag = false;
+    start = width = height = 1;
 
+    int i = 0;
     while(1){
-        if (canBuild(width, height) == false){
-            break;
-        }
+        if(start + width + height - 1 > N) break;
 
-        int tmpWidth = width;
+        for(int c = start; c < start + width; c++){
+            for(int r = N; r > N - height; r--){
+                int nr, nc;
 
-        for(int i = 0; i < width; i++, tmpWidth--){
-            int idx = 0;
-            for(int j  = 0; j < height; j++, idx++){
-                bowl[tmpWidth].push_back(bowl[idx][i]);
+                nr = N - width + c - start;
+                nc = start + width + N -r;
+
+                FISH[nr][nc] = FISH[r][c];
+                FISH[r][c] = 0;
             }
         }
 
-        for(int i = 0; i < height; i++){
-            for(int j = 0; j < width; j++){
-                bowl[i].pop_front();
-            }
-        }
+        if(i % 2)width++;
+        else height++;
 
-        if(flag == false){
-            height++;
-            flag = true;
-        }else{
-            width++;
-            flag = false;
-        }
+        start += (i / 2 + 1);
+        i++;
     }
-    return height;
 }
 
-void adjustFish(int height){
-    deque<int> tmpbowl[MAX];
-    for(int i = 0; i < height; i++){
-        tmpbowl[i] = bowl[i];
-    }
+int dr[] = {0, 0, 0, -1, 1};
+int dc[] = {0, 1, -1, 0, 0};
 
-    for(int i = height - 1; i >= 0; i--){
-        for(int j = 0; j < bowl[i].size(); j++){
-            int x = i;
-            int y = j;
-            int num = bowl[x][y];
-            for(int k = 0; k < 2; k++){
-                int nx = x + dx[k];
-                int ny = y + dy[k];
-                if(nx >= 0 && ny < bowl[i].size()){
-                    int num2 = bowl[nx][ny];
-                    int diff = abs(num - num2) / 5;
-                    if(diff > 0){
-                        if(num > num2){
-                            tmpbowl[x][y] -= diff;
-                            tmpbowl[nx][ny] += diff;
-                        }else{
-                            tmpbowl[nx][ny] -= diff;
-                            tmpbowl[x][y] += diff;
-                        }
+void spreadFish(){
+    int tmpFISH[MAX][MAX] = {0};
+    for(int r = 1; r <= N; r++){
+        for(int c = 1; c <= N; c++){
+            if(FISH[r][c] > 0){
+                int save = FISH[r][c];
+
+                for(int dir = 1; dir <= 4; dir++){
+                    int nr, nc;
+
+                    nr = r + dr[dir];
+                    nc = c + dc[dir];
+
+                    if(FISH[nr][nc] == 0) continue;
+
+                    if(FISH[r][c] > FISH[nr][nc]){
+                        int diff = (FISH[r][c] - FISH[nr][nc]) / 5;
+
+                        save -= diff;
+                        tmpFISH[nr][nc] += diff;
                     }
                 }
+
+                tmpFISH[r][c] += save;
             }
         }
     }
 
-    for(int i = 0; i < height; i++){
-        bowl[i] = tmpbowl[i];
-    }
-}
-
-void spreadBowl(int height){
-    int width = bowl[height - 1].size();
-    int size = bowl[0].size();
-    for(int i = 0; i < width; i++){
-        for(int j = 0; j < height; j++){
-            bowl[0].push_back(bowl[j][i]);
+    for(int r = 1; r <= N; r++){
+        for(int c = 1; c <= N; c++){
+            FISH[r][c] = tmpFISH[r][c];
         }
     }
-    for(int i = 1; i < height; i++){
-        bowl[i].clear();
-    }
-    for(int i = width; i < size; i++){
-        bowl[0].push_back(bowl[0][i]);
-    }
-    for(int i = 0; i < size; i++){
-        bowl[0].pop_front();
-    }
 }
 
-void buildBowl2(){
-    int n = bowl[0].size();
-    for(int i = 0; i < n / 2; i++){
-        bowl[1].push_front(bowl[0][i]);
-    }
-    for(int i = 0; i < n / 2; i++){
-        bowl[0].pop_front();
-    }
-    for(int i = 0; i < n / 4; i++){
-        bowl[2].push_front(bowl[1][i]);
-        bowl[3].push_front(bowl[0][i]);
-    }
-    for(int i = 0; i < n / 4; i++){
-        bowl[0].pop_front();
-        bowl[1].pop_front();
-    }
-}
+void fishSort(){
+    int idx;
+    int tmpFISH[MAX][MAX] = {0};
 
-void solution(){
-    int answer = 0;
-    while(1){
-        if(check() == true){
-            cout<<answer<<"\n";
-            break;
+    idx = 1;
+
+    for(int c = 1; c <= N; c++){
+        if(FISH[N][c] == 0) continue;
+
+        int row = N;
+        while(1){
+            if(FISH[row][c] == 0) break;
+
+            tmpFISH[N][idx++] = FISH[row][c];
+            row--;
         }
+    }
 
-        addFish();
-        int height = buildBowl();
-        adjustFish(height);
-        spreadBowl(height);
-        buildBowl2();
-        adjustFish(4);
-        spreadBowl(4);
-        answer++;
+    for(int r = 1; r <= N; r++){
+        for(int c = 1; c <= N; c++){
+            FISH[r][c] = tmpFISH[r][c];
+        }
     }
 }
 
-void solve(){
-    input();
-    solution();
+void fold(){
+    int sc = N / 2 + 1;
+    for(int c = N / 2; c >= 1; c--) FISH[N - 1][sc++] = FISH[N][c];
+    for(int c = N / 2; c >= 1; c--) FISH[N][c] = 0;
+
+    for(int r = N - 1; r <= N; r++){
+        int ec = N / 4 * 3;
+        int fix = N;
+        for(int c = N / 2 + 1; c <= ec; c++){
+            int nr, nc;
+
+            nr = 2 * N - r - 3;
+            nc = fix--;
+
+            FISH[nr][nc] = FISH[r][c];
+            FISH[r][c] = 0;
+        }
+    }
+}
+
+int check(){
+    int max = 0;
+    int min = 0x7fff0000;
+    for(int r = 1; r <= N; r++){
+        for(int c = 1; c <= N; c++){
+            if(FISH[r][c] == 0) continue;
+            if(FISH[r][c] < min) min = FISH[r][c];
+            if(FISH[r][c] > max) max = FISH[r][c];
+
+        }
+    }
+
+    if(max - min <= K) return 1;
+    return 0;
 }
 
 int main(){
@@ -193,7 +167,22 @@ int main(){
     cin.tie(0);
     cout.tie(0);
 
-    solve();
+    input();
+
+    int count = 0;
+
+    while(1){
+        addFish();
+        move();
+        spreadFish();
+        fishSort();
+        fold();
+        spreadFish();
+        fishSort();
+        count++;
+    }
+
+    cout<<count<<"\n";
 
     return 0;
 }

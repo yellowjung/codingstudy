@@ -9,11 +9,11 @@ int MAP[MAX][MAX];
 int MINANS;
 
 void input(){
-    cin >> N >> W >> H;
+    cin >> N >> W>> H;
 
     for(int r = 0; r <= H + 1; r++){
         for(int c = 0; c <= W + 1; c++){
-            MAP[r][c] = - 1;
+            MAP[r][c] = -1;
         }
     }
 
@@ -24,35 +24,26 @@ void input(){
     }
 }
 
+int count(int map[MAX][MAX]){
+    int sum = 0;
+    for(int r = 1; r <= H; r++){
+        for(int c = 1; c <= W; c++){
+            sum += !!map[r][c];
+        }
+    }
+
+    return sum;
+}
+
 int check(int column, int map[MAX][MAX]){
     for(int row = 1; row <= H; row++){
         if(map[row][column]) return row;
     }
-
     return -1;
 }
 
 int dr[] = {0, -1, 0, 1};
 int dc[] = {-1, 0, 1, 0};
-
-void move(int map[MAX][MAX]){
-    for(int c = 1; c <= W; c++){
-        int list[MAX] = {0};
-        int lcnt = 0;
-
-        for(int r = H; r >= 1; r--){
-            if(map[r][c]){
-                list[lcnt++] = map[r][c];
-                map[r][c] = 0;
-            }
-        }
-
-        int sr = H;
-        for(int l = 0; l < lcnt; l++){
-            map[sr--][c] = list[l];
-        }
-    }
-}
 
 void crash(int sr, int sc, int map[MAX][MAX]){
     int size = map[sr][sc];
@@ -68,36 +59,44 @@ void crash(int sr, int sc, int map[MAX][MAX]){
 
             if(MAP[nr][nc] == -1) break;
 
-            if(MAP[nr][nc] > 0) crash(nr, nc, map);
+            if(MAP[nr][nc] > 0 ) crash(nr, nc, map);
         }
     }
 }
 
-void copy(int dest[MAX][MAX], int src[MAX][MAX])
-{
-	for (int r = 0; r <= H + 1; r++)
-		for (int c = 0; c <= W + 1; c++)
-			dest[r][c] = src[r][c];
+void move(int map[MAX][MAX]){
+    for(int c = 1; c <= W; c++){
+        int list[MAX] = {0};
+        int lcnt = 0;
+
+        for(int r = H; r >= 1; r--){
+            if(map[r][c]){
+                list[lcnt++] = map[r][c];
+                map[r][c] = 0;
+            }
+        }
+
+        int sr = H;
+        for(int i = 0; i <lcnt; i++){
+            map[sr--][c] = list[i];
+        }
+    }
 }
 
-int count(int map[MAX][MAX])
-{
-	int sum = 0;
-	for (int r = 1; r <= H; r++)
-		for (int c = 1; c <= W; c++)
-			sum += !!map[r][c];
-
-	return sum;
+void copy(int dest[MAX][MAX], int src[MAX][MAX]){
+    for(int r = 0; r <= H + 1; r++){
+        for(int c = 0; c <= W + 1; c++){
+            dest[r][c] = src[r][c];
+        }
+    }
 }
+
 
 
 void DFS(int L, int map[MAX][MAX]){
     if(L == N){
         int tmp = count(map);
-        if(tmp < MINANS){
-            MINANS = tmp;
-        }
-
+        if(tmp < MINANS) MINANS = tmp;
         return;
     }
 
@@ -108,8 +107,8 @@ void DFS(int L, int map[MAX][MAX]){
             continue;
         }
 
-        int tmpMAP[MAX][MAX] = {0 };
-        
+        int tmpMAP[MAX][MAX] = {0};
+
         copy(tmpMAP, map);
         crash(sr, col, tmpMAP);
         move(tmpMAP);
@@ -119,9 +118,6 @@ void DFS(int L, int map[MAX][MAX]){
 }
 
 int main(){
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    cout.tie(0);
 
     cin >> T;
     for(int tc = 1; tc <= T; tc++){
@@ -131,7 +127,7 @@ int main(){
 
         DFS(0, MAP);
 
-        cout<<"#"<<tc<<" "<< MINANS <<"\n";
+        cout<<"#"<<tc<<" "<<MINANS<<"\n";
     }
 
     return 0;

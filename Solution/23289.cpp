@@ -2,18 +2,19 @@
 
 using namespace std;
 
-#define MAX (20 + 10)
 #define RIGHT (1)
 #define LEFT (2)
 #define UP (3)
 #define DOWN (4)
 
-int dr[] = {0, 0, 0, -1 ,1};
-int dc[] = {0, -1, -1, 0, 0};
+#define MAX (20 + 10)
 
 int R, C, K, W;
 int A[MAX][MAX];
 int MAP[MAX][MAX];
+
+int dr[] = {0, 0, 0, -1, 1};
+int dc[] = {0, 1, -1, 0, 0};
 
 typedef struct st1{
     int r;
@@ -79,185 +80,217 @@ void input(){
     }
 }
 
-void output(int map[MAX][MAX]){
-    for(int r = 1; r <= R; r++){
-        for(int c = 1; c <= C; c++){
-            cout<<map[r][c]<<" ";
-        }
-        cout<<"\n";
-    }
-    cout<<"\n";
+void heat(int r, int c, int dir)
+{
+	QUEUE queue[MAX * MAX];
+	int visit[MAX][MAX] = { 0 };
+	int wp, rp;
+	int sr, sc, temp;
+
+	temp = 5;
+	sr = r, sc = c;
+
+	wp = rp = 0;
+
+	queue[wp].r = r;
+	queue[wp].c = c;
+	queue[wp++].temp = 5;
+
+	visit[r][c] = 1;
+
+	while (wp > rp)
+	{
+		QUEUE out = queue[rp++];
+
+		if (out.temp == 0) break;
+
+		if (out.r <= 0 || out.c <= 0 || out.r > R || out.c > C) continue;
+
+		MAP[out.r][out.c] += out.temp;
+
+		if (dir == RIGHT || dir == LEFT)
+		{
+			int nr, nc;
+
+			nc = out.c + dc[dir];
+
+			// ↖ ↗ 위
+			nr = out.r - 1;
+			if (visit[nr][nc] == 0 // queue에 들어가지 않은 장소에서
+				// (x, y)와 (x - 1, y) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][out.c].direction[UP] == 0)
+				// (x - 1,y)와 (x - 1, y + dc[dir]) 사이에 벽이 없어야 한다.
+				&& (wall[nr][out.c].direction[dir] == 0))
+			{
+				queue[wp].r = nr;
+				queue[wp].c = nc;
+				queue[wp++].temp = out.temp - 1;
+
+				visit[nr][nc] = 1;
+			}
+
+
+			// ← → 옆
+			nr = out.r;
+			if (visit[nr][nc] == 0 // queue에 들어가지 않은 장소에서
+				// (x, y)와 (x, y + dc[dir]) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][out.c].direction[dir] == 0))
+			{
+				queue[wp].r = nr;
+				queue[wp].c = nc;
+				queue[wp++].temp = out.temp - 1;
+
+				visit[nr][nc] = 1;
+			}
+
+			// ↙ ↘ 아래
+			nr = out.r + 1;
+			if (visit[nr][nc] == 0 // queue에 들어가지 않은 장소에서
+				// (x, y)와 (x + 1, y) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][out.c].direction[DOWN] == 0)
+				// (x + 1,y)와 (x + 1, y + dc[dir]) 사이에 벽이 없어야 한다.
+				&& (wall[nr][out.c].direction[dir] == 0))
+			{
+				queue[wp].r = nr;
+				queue[wp].c = nc;
+				queue[wp++].temp = out.temp - 1;
+
+				visit[nr][nc] = 1;
+			}
+		}
+		else // UP, DOWN
+		{
+			int nr, nc;
+
+			nr = out.r + dr[dir];
+
+			// ↖ ↙ 왼
+			nc = out.c - 1;
+			if (visit[nr][nc] == 0 // queue에 들어가지 않은 장소에서
+				// (x, y)와 (x, y - 1) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][out.c].direction[LEFT] == 0)
+				// (x,y - 1)와 (x + dr[dir], y - 1) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][nc].direction[dir] == 0))
+			{
+				queue[wp].r = nr;
+				queue[wp].c = nc;
+				queue[wp++].temp = out.temp - 1;
+
+				visit[nr][nc] = 1;
+			}
+
+
+			// ↑ ↓ 위, 아래
+			nc = out.c;
+			if (visit[nr][nc] == 0 // queue에 들어가지 않은 장소에서
+				// (x, y)와 (x + dr[dir], y) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][out.c].direction[dir] == 0))
+			{
+				queue[wp].r = nr;
+				queue[wp].c = nc;
+				queue[wp++].temp = out.temp - 1;
+
+				visit[nr][nc] = 1;
+			}
+
+			// ↗ ↘
+			nc = out.c + 1;
+			if (visit[nr][nc] == 0 // queue에 들어가지 않은 장소에서
+				// (x, y)와 (x, y + 1) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][out.c].direction[RIGHT] == 0)
+				// (x,y + 1)와 (x + dr[dir], y + 1) 사이에 벽이 없어야 한다.
+				&& (wall[out.r][nc].direction[dir] == 0))
+			{
+				queue[wp].r = nr;
+				queue[wp].c = nc;
+				queue[wp++].temp = out.temp - 1;
+
+				visit[nr][nc] = 1;
+			}
+		}
+	}
 }
 
-void heat(int r, int c, int dir){
-    QUEUE queue[MAX * MAX];
+void controlTemperature()
+{
+	int tmpMAP[MAX][MAX] = { 0 };
 
-    int visit[MAX][MAX] = {0};
-    int wp, rp;
-    int sr, sc, temp;
+	for (int r = 1; r <= R; r++)
+	{
+		for (int c = 1; c <= C; c++)
+		{
+			if (MAP[r][c] > 0)
+			{
+				int save = MAP[r][c];
 
-    temp = 5;
-    sr = r, sc = c;
+				for (int dir = 1; dir <= 4; dir++)
+				{
+					int nr, nc;
 
-    wp = rp = 0;
+					nr = r + dr[dir];
+					nc = c + dc[dir];
 
-    queue[wp].r = r;
-    queue[wp].c = c;
-    queue[wp++].temp = 5;
+					if (nr <= 0 || nc <= 0 || nr > R || nc > C) continue;
 
-    visit[r][c] = 1;
+					if (wall[r][c].direction[dir] == 1) continue;
 
-    while(wp > rp){
-        QUEUE out = queue[rp++];
+					if (MAP[r][c] > MAP[nr][nc]) // 온도가 높은 경우만 확산
+					{
+						int diff = (MAP[r][c] - MAP[nr][nc]) / 4;
 
-        if(out.temp == 0) break;
+						save -= diff;
+						tmpMAP[nr][nc] += diff;
+					}
+				}
 
-        if(out.r <= 0 || out.c <= 0 || out.r > R || out.c > C) continue;
+				tmpMAP[r][c] += save;
+			}
+		}
+	}
 
-        MAP[out.r][out.c] += out.temp;
-
-        if(dir == RIGHT || dir == LEFT){
-            int nr, nc;
-
-            nc = out.c + dc[dir];
-
-            nr = out.r - 1;
-            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[UP] == 0) && (wall[nr][out.c].direction[dir] == 0)){
-                queue[wp].r = nr;
-                queue[wp].c = nc;
-                queue[wp++].temp = out.temp - 1;
-
-                visit[nr][nc] = 1;
-            }
-
-            nr = out.r;
-            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[dir] == 0)){
-                queue[wp].r = nr;
-                queue[wp].c = nc;
-                queue[wp++].temp = out.temp - 1;
-
-                visit[nr][nc] = 1;
-            }
-
-            nr = out.r + 1;
-            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[DOWN] == 0) && (wall[nr][out.c].direction[dir] == 0)){
-                queue[wp].r = nr;
-                queue[wp].c = nc;
-                queue[wp++].temp = out.temp - 1;
-
-                visit[nr][nc] = 1;
-            }
-        }else{
-            int nr, nc;
-
-            nr = out.r + dr[dir];
-
-            nc = out.c - 1;
-            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[LEFT] == 0) && (wall[out.r][nc].direction[dir] == 0)){
-                queue[wp].r = nr;
-                queue[wp].c == nc;
-                queue[wp++].temp = out.temp - 1;
-
-                visit[nr][nc] = 1;
-            }
-
-
-            nc = out.c;
-            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[dir] == 0)){
-                queue[wp].r = nr;
-                queue[wp].c = nc;
-                queue[wp].temp = out.temp - 1;
-
-                visit[nr][nc] = 1;
-            }
-
-            nc = out.c + 1;
-            if(visit[nr][nc] == 0 && (wall[out.r][out.c].direction[RIGHT] == 0) && (wall[out.r][nc].direction[dir] == 0)){
-                queue[wp].r = nr;
-                queue[wp].c = nc;
-                queue[wp++].temp = out.temp - 1;
-
-                visit[nr][nc] = 1;
-
-            }
-        }
-
-
-
-    }
-}
-
-void controlTemperature(){
-    int tmpMAP[MAX][MAX] = { 0 };
-
-    for(int r = 1; r <= R; r++){
-        for(int c = 1; c <= C; c++){
-            if(MAP[r][c] > 0){
-                int save = MAP[r][c];
-
-                for(int dir = 1; dir <= 4; dir++){
-                    int nr, nc;
-
-                    nr = r + dr[dir];
-                    nc = c + dc[dir];
-
-                    if(nr <= 0 || nc <= 0 || nr > R || nc > C) continue;
-                    if(wall[r][c].direction[dir] == 1) continue;
-                    if(MAP[r][c] > MAP[nr][nc]){
-                        int diff = (MAP[r][c] - MAP[nr][nc]) / 4;
-                        save -= diff;
-                        tmpMAP[nr][nc] += diff;
-                    }
-                }
-
-                tmpMAP[r][c] += save;
-            }
-        }
-    }
-
-    for(int r= 1; r <= R; r++){
-        for(int c = 1; c <= C; c++){
-            MAP[r][c] = tmpMAP[r][c];
-        }
-    }
+	for (int r = 1; r <= R; r++)
+		for (int c = 1; c <= C; c++)
+			MAP[r][c] = tmpMAP[r][c];
 }
 
 void decreaseTemperature(){
-	if (MAP[1][1]) MAP[1][1]--;
-	if (MAP[R][1]) MAP[R][1]--;
-	if (MAP[1][C]) MAP[1][C]--;
-	if (MAP[R][C]) MAP[R][C]--;
+    if(MAP[1][1]) MAP[1][1]--;
+    if(MAP[R][1]) MAP[R][1]--;
+    if(MAP[1][C]) MAP[1][C]--;
+    if(MAP[R][C]) MAP[R][C]--;
 
-	for (int r = 2; r <= R - 1; r++)
-		if (MAP[r][1]) MAP[r][1]--;
+    for(int r = 2; r <= R - 1; r++){
+        if(MAP[r][1]) MAP[r][1]--;
+    }
 
-	for (int r = 2; r <= R - 1; r++)
-		if (MAP[r][C]) MAP[r][C]--;
+    for(int r = 2; r <= R - 1; r++){
+        if(MAP[r][C]) MAP[r][C]--;
+    }
 
-	for (int c = 2; c <= C - 1; c++)
-		if (MAP[1][c]) MAP[1][c]--;
+    for(int c = 2; c <= C - 1; c++){
+        if(MAP[1][c]) MAP[1][c]--;
+    }
 
-	for (int c = 2; c <= C - 1; c++)
-		if (MAP[R][c]) MAP[R][c]--;
+    for(int c = 2; c <= C - 1; c++){
+        if(MAP[R][c])MAP[R][c]--;
+    }
 }
 
 int testCheckPoint(){
     for(int i = 0; i < ccnt; i++){
         if(MAP[checkPoint[i].r][checkPoint[i].c] < K) return 0;
     }
+
     return 1;
 }
 
 int main(){
-
     input();
-    
-    int chocolate = 0;
 
+    int chocolate = 0;
     while(1){
         for(int i = 0; i < hcnt; i++){
             int r, c, dir;
-
             r = heater[i].r;
             c = heater[i].c;
             dir = heater[i].dir;
@@ -267,13 +300,16 @@ int main(){
 
         controlTemperature();
 
+        decreaseTemperature();
+
         chocolate++;
 
         if(testCheckPoint()) break;
-        if(chocolate > 100)break;
+        if(chocolate > 100) break;
     }
 
     cout<<chocolate<<"\n";
+
 
     return 0;
 }

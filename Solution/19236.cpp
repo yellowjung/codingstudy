@@ -1,97 +1,180 @@
 #include <iostream>
+#include <algorithm>
+#include <queue>
+
+#define MAX 4
 
 using namespace std;
 
-int MAP[6][6];
+struct FISH{
+    int x;
+    int y;
+    int Dir;
+    bool Live;
+};
 
-typedef struct st2{
-    int r; 
-    int c;
-    int dir;
-    int dead;
-}FISH;
+int Answer;
+int MAP[MAX][MAX];
+FISH Fish[20];
 
-FISH Fish[17];
+int dx[] = {0, -1, -1, 0, 1, 1, 1, 0, -1};
+int dy[] = {0, 0, -1, -1 ,-1 ,0, 1, 1, 1};
 
-void input(){
-    for(int r = 0; r <= 5; r++){
-        for(int c = 0; c <= 5; c++){
-            MAP[r][c] = -1;
-        }
-    }
+int Max(int A, int B) {if (A > B) return A; return B;}
 
-    for(int r = 1; r <= 4; r++){
-        for(int c = 1; c <= 4; c++){
-            int number, dir;
-
-            cin >> number >> dir;
-
-            MAP[r][c] = number;
-
-            Fish[number].r = r;
-            Fish[number].c = c;
-            Fish[number].dir = dir;
+void Input(){
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++){
+            int a, b;
+            cin >> a >> b;
+            MAP[i][j] = a;
+            Fish[a] = { i ,j ,b, true};
         }
     }
 }
 
-int dr[] = {0, -1, -1, 0, 1, 1, 1, 0, -1};
-int dc[] = {0, 0, -1, -1, -1, 0, 1, 1, 1};
-int changeDir[] = {0, 2, 3, 4, 5, 6, 7, 8, 1};
-
-void DFS(int sr, int sc, int dir, int score, int map[6][6], FISH fish[]){
-    int tmpMAP[6][6];
-    FISH shark = {0};
-    FISH tmpFish[17] = {0};
-
-    for(int r = 0; r <= 5; r++){
-        for(int c = 0; c <= 5; c++){
-            tmpMAP[r][c] = map[r][c];
+void Copy_State(int A[][4], int B[][4], FISH C[], FISH D[]){
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++){
+            A[i][j] = B[i][j];
         }
     }
 
-    for(int i = 1; i <= 16; i ++){
-        tmpFish[i] = fish[i];
+    for(int i = 1; i <= 16; i++){
+        C[i] = D[i];
     }
+}
 
-    if(tmpFish[tmpMAP[sr][sc]].dead == 1) return;
+void Swap_Fish(int Idx, int IIdx){
+    FISH temp = Fish[Idx];
+    Fish[Idx].x = Fish[IIdx].x;
+    Fish[Idx].y = Fish[IIdx].y;
+    Fish[IIdx].x = temp.x;
+    Fish[IIdx].x = temp.x;
+}
 
-    shark.r = sr;
-    shark.c = sc;
+void Move_Fish(){
+    for(int i = 1; i <= 16; i++){
 
-    int deadFishNUmber = tmpMAP[sr][sc];
+        if(Fish[i].Live == false) continue;
 
-    shark.dir = tmpFish[deadFishNUmber].dir;
+        int x = Fish[i].x;
+        int y = Fish[i].y;
+        int Dir = Fish[i].Dir;
 
-    score += deadFishNUmber;
-    tmpFish[deadFishNUmber].dead = 1;
+        int nx = x + dx[Dir];
+        int ny = y + dy[Dir];
+        bool Flag = false;
 
-    for(int number = 1; number <= 16; number++){
-        FISH f = tmpFish[number];
+        if(nx >= 0 && ny >= 0 && nx < 4 && ny < 4){
+            if(MAP[nx][ny] == 0){
+                Flag = true;
+                Fish[i].x = nx;
+                Fish[i].y = ny;
+                MAP[nx][ny] = i;
+                MAP[x][y] = 0;
+            }else if(MAP[nx][ny] != -1){
+                Flag = true;
+                Swap_Fish(i, MAP[nx][ny]);
+                swap(MAP[x][y], MAP[nx][ny]);
+            }
+        }
 
-        if(f.dead) continue;
+        if(Flag == false){
+            int nDir = Dir + 1;
+            if(nDir == 9) nDir = 1;
+            int nx = x + dx[nDir];
+            int ny = y + dy[nDir];
 
-        while(1){
-            int nr, nc;
-
-            nr = f.r + dr[f.dir];
-            nc = f.c + dc[f.dir];
-
-            if(tmpMAP[nr][nc] == -1 || (nr == shark.r && nc == shark.c)){
-                tmpFish[number].dir = f.dir = changeDir[f.dir];
-                continue;
-            }else{
-                int changeFishNumber = tmpMAP[nr][nc];
-
-                int tmpR, tmpC;
+            while(nDir != Dir){
+                if(nx >= 0 && ny >= 0 && nx < 4 && ny < 4){
+                    if(MAP[nx][ny] == 0){
+                        Fish[i].x = nx;
+                        Fish[i].y = ny;
+                        MAP[nx][ny] = i;
+                        MAP[x][y] = 0;
+                        Fish[i].Dir = nDir;
+                        break;
+                    }else if(MAP[nx][ny] != -1){
+                        Swap_Fish(i, MAP[nx][ny]);
+                        swap(MAP[x][y], MAP[nx][ny]);
+                        Fish[i].Dir = nDir;
+                        break;
+                    }
+                }
+                nDir++;
+                if(nDir == 9) nDir = 1;
+                nx = x + dx[nDir];
+                ny = y + dy[nDir];
             }
         }
     }
+}
 
+void Make_State(int x, int y, int nx, int ny, int Fish_Num, bool T){
+    if(T == true){
+        MAP[x][y] = 0;
+        MAP[nx][ny] = -1;
+        Fish[Fish_Num].Live = false;
+    }else{
+        MAP[x][y] = -1;
+        MAP[nx][ny] = Fish_Num;
+        Fish[Fish_Num].Live = true;
+    }
+}
+
+void DFS(int x, int y, int Dir, int Sum){
+    Answer = Max(Answer, Sum);
+
+    int C_MAP[4][4];
+    FISH C_Fish[20];
+    Copy_State(C_MAP, MAP, C_Fish, Fish);
+
+    Move_Fish();
+
+    for(int i = 1; i <= 3; i++){
+        int nx = x + dx[Dir] * i;
+        int ny = y + dy[Dir] * i;
+        if(nx >= 0 && ny >= 0 && nx < 4 && ny < 4){
+            if(MAP[nx][ny] == 0) continue;
+
+            int Fish_Num = MAP[nx][ny];
+            int nDir = Fish[Fish_Num].Dir;
+
+            Make_State(x, y, nx, ny, Fish_Num, true);
+            DFS(nx, ny , nDir, Sum + Fish_Num);
+            Make_State(nx, ny, x, y, Fish_Num, false);
+        }else{
+            break;
+        }
+    }
+
+    Copy_State(MAP, C_MAP, Fish, C_Fish);
+}
+
+void Solution(){
+    int F_Num = MAP[0][0];
+    int Dir = Fish[F_Num].Dir;
+    Fish[F_Num].Live = false;
+    MAP[0][0] = -1;
+
+    DFS(0, 0, Dir, F_Num);
+    cout<< Answer <<"\n";
 
 }
 
+void Solve(){
+    Input();
+    Solution();
+}
+
 int main(){
+
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+    cout.tie(0);
+
+    Solve();
 
     return 0;
 }

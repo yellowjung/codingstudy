@@ -1,113 +1,140 @@
 #include <iostream>
-#include <queue>
+#include <unordered_map>
 
 using namespace std;
 
-#define MAX_N 31
-#define MAX_L 41
+struct BOX{
+    int idx;
+    int weight;
+    int belt;
 
-int l, n, q;
-int info[MAX_L][MAX_L];
-int bef_k[MAX_N];
-int r[MAX_N], c[MAX_N], h[MAX_N], w[MAX_N], k[MAX_N];
-int nr[MAX_N], nc[MAX_N];
-int dmg[MAX_N];
-bool is_moved[MAX_N];
+    BOX* prev;
+    BOX* next;
 
-int dx[4] = {-1, 0, 1, 0}, dy[4] = {0, 1, 0, -1};
-
-// 움직임을 시도해봅니다.
-bool TryMovement(int idx, int dir) {
-    // 초기화 작업입니다.
-    for(int i = 1; i <= n; i++) {
-        dmg[i] = 0;
-        is_moved[i] = false;
-        nr[i] = r[i];
-        nc[i] = c[i];
+    BOX(){
+        idx = -1;
+        weight = -1;
+        belt = -1;
+        prev = NULL;
+        next = NULL;
     }
+};
 
-    queue<int> q;
+struct BELT{
+    BOX* head;
+    BOX* tail;
+    bool is_broken;
 
-    q.push(idx);
-    is_moved[idx] = true;
+    BELT(){
+        is_broken = false;
+        head = new BOX();
+        tail = new BOX();
 
-    while(!q.empty()) {
-        int x = q.front(); q.pop();
+        head->next = tail;
+        tail->prev = head;
 
-        nr[x] += dx[dir];
-        nc[x] += dy[dir];
-
-        // 경계를 벗어나는지 체크합니다.
-        if(nr[x] < 1 || nc[x] < 1 || nr[x] + h[x] - 1 > l || nc[x] + w[x] - 1 > l)
-            return false;
-
-        // 대상 조각이 다른 조각이나 장애물과 충돌하는지 검사합니다.
-        for(int i = nr[x]; i <= nr[x] + h[x] - 1; i++) {
-            for(int j = nc[x]; j <= nc[x] + w[x] - 1; j++) {
-                if(info[i][j] == 1) 
-                    dmg[x]++;
-                if(info[i][j] == 2)
-                    return false;
-            }
-        }
-
-        // 다른 조각과 충돌하는 경우, 해당 조각도 같이 이동합니다.
-        for(int i = 1; i <= n; i++) {
-            if(is_moved[i] || k[i] <= 0) 
-                continue;
-            if(r[i] > nr[x] + h[x] - 1 || nr[x] > r[i] + h[i] - 1) 
-                continue;
-            if(c[i] > nc[x] + w[x] - 1 || nc[x] > c[i] + w[i] - 1) 
-                continue;
-
-            is_moved[i] = true;
-            q.push(i);
-        }
+        head->prev = NULL;
+        tail->next = NULL;
     }
+};
 
-    dmg[idx] = 0;
-    return true;
+int q, cmd, n, m;
+unordered_map<int, BOX*> box_map;
+BOX box[100000];
+BELT belt[10];
+
+bool empty(int belt_num){
+    return (belt[belt_num].head -> next == belt[belt_num].tail);
 }
 
-// 특정 조각을 지정된 방향으로 이동시키는 함수입니다.
-void MovePiece(int idx, int dir) {
-    if(k[idx] <= 0) 
+void push_back(int belt_num, BOX* _box){
+    box_map[_box->idx] = _box;
+
+    BOX* prev = belt[belt_num].tail -> prev;
+    BOX* next = belt[belt_num].tail;
+
+    _box->prev = prev;
+    _box->next = next;
+
+    prev->next = _box;
+    next->prev = _box;
+}
+
+void pop_front(int belt_num){
+    if(empty(belt_num)){
         return;
+    }
 
-    // 이동이 가능한 경우, 실제 위치와 체력을 업데이트합니다.
-    if(TryMovement(idx, dir)) {
-        for(int i = 1; i <= n; i++) {
-            r[i] = nr[i];
-            c[i] = nc[i];
-            k[i] -= dmg[i];
+    BOX* item = belt[belt_num].head -> next;
+    box_map.erase(item -> idx);
+    BOX* prev = belt[belt_num].head;
+    BOX* next = belt[belt_num].head -> next -> next;
+
+    prev->next = next;
+    next->prev = prev;
+
+    item->prev = NULL;
+    item->next = NULL;
+}
+
+void q_100(){
+    cin >> n;
+    cin >> m;
+
+    int id[100000], w[100000];
+    for(int i = 0; i < n; i++){
+        cin >> id[i];
+    }
+    for(int i = 0; i < n; i++){
+        cin >> w[i];
+    }
+
+    int pos = 0;
+    for(int belt_num = 0; belt_num < m; belt_num++){
+        for(int i = 0; i < n / m; i++){
+            box[pos].idx = id[pos];
+            box[pos].weight = w[pos];
+            box[pos].belt = belt_num;
+            push_back(belt_num, &box[pos]);
+            pos++;
         }
     }
 }
 
-int main() {
-    // 입력값을 받습니다.
-    cin >> l >> n >> q;
-    for(int i = 1; i <= l; i++)
-        for(int j = 1; j <= l; j++)
-            cin >> info[i][j];
-    for(int i = 1; i <= n; i++) {
-        cin >> r[i] >> c[i] >> h[i] >> w[i] >> k[i];
-        bef_k[i] = k[i];
-    }
-    for(int i = 1; i <= q; i++) {
-        int idx, dir;
-        cin >> idx >> dir;
-        MovePiece(idx, dir);
-    }
+int q_200(){
+    int ret = 0;
+    int w;
+    cin >> w;
 
-    // 결과를 계산하고 출력합니다.
-    long long ans = 0;
-    for(int i = 1; i <= n; i++) {
-        if(k[i] > 0) {
-            ans += bef_k[i] - k[i];
+    for(int i = 0; i < m; i++){
+        if(empty(i) || belt[i].is_broken){
+            continue;
+        }
+
+        BOX* front = belt[i].head -> next;
+        
+    }
+}
+
+int main(){
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+    cout.tie(0);
+
+    cin >> q;
+    while(q--){
+        cin >> cmd;
+        switch (cmd)
+        {
+        case 100:
+            q_100();
+            break;
+        case 200:
+            cout << q_200() <<"\n";
+        default:
+            break;
         }
     }
 
-    cout << ans;
     return 0;
 }

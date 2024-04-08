@@ -112,8 +112,100 @@ int q_200(){
         }
 
         BOX* front = belt[i].head -> next;
-        
+        if(front -> weight <= w){
+            ret += front -> weight;
+            pop_front(i);
+        }else{
+            pop_front(i);
+            push_back(i, front);
+        }
     }
+
+    return ret;
+}
+
+int q_300(){
+    int id;
+    cin >> id;
+    if(box_map.find(id) == box_map.end()){
+        return -1;
+    }
+
+    BOX* item = box_map[id];
+    BOX* prev = item->prev;
+    BOX* next = item->next;
+
+    prev->next = next;
+    next->prev = prev;
+
+    item->prev = NULL;
+    item->next = NULL;
+
+    box_map.erase(id);
+    return id;
+}
+
+int q_400(){
+    int id;
+    cin >> id;
+    if(box_map.find(id) == box_map.end()){
+        return -1;
+    }
+
+    BOX* item = box_map[id];
+    BOX* prev = item->prev;
+    BOX* begin = belt[item->belt].head->next;
+    BOX* end = belt[item->belt].tail->prev;
+
+    if(item != begin){
+        item->prev = belt[item->belt].head;
+        belt[item->belt].head->next = item;
+
+        begin->prev = end;
+        end->next = begin;
+
+        prev->next = belt[item->belt].tail;
+        belt[item->belt].tail->prev = prev;
+    }
+
+    return item->belt + 1;
+}
+
+int q_500(){
+    int belt_num;
+    cin >> belt_num;
+    --belt_num;
+
+    if(belt[belt_num].is_broken){
+        return -1;
+    }
+
+    belt[belt_num].is_broken = true;
+    if(!empty(belt_num)){
+        int target = (belt_num + 1) % m;
+        while(belt[target].is_broken){
+            target = (target + 1) % m;
+        }
+
+        BOX* prev = belt[target].tail -> prev;
+        BOX* begin = belt[belt_num].head -> next;
+        BOX* end = belt[belt_num].tail -> prev;
+
+        for(auto it = begin; it != belt[belt_num].tail; it = it->next){
+            it->belt = target;
+        }
+
+        prev->next = begin;
+        begin -> prev = prev;
+
+        end->next = belt[target].tail;
+        belt[target].tail->prev = end;
+
+        belt[belt_num].head->next = belt[belt_num].tail;
+        belt[belt_num].tail->prev = belt[belt_num].head;
+    }
+
+    return belt_num + 1;
 }
 
 int main(){
@@ -131,7 +223,15 @@ int main(){
             break;
         case 200:
             cout << q_200() <<"\n";
-        default:
+            break;
+        case 300:
+            cout << q_300() <<"\n";
+            break;
+        case 400:
+            cout << q_400() <<"\n";
+            break;
+        case 500:
+            cout << q_500() <<"\n";
             break;
         }
     }
